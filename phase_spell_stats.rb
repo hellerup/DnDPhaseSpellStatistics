@@ -4,18 +4,18 @@ def format(value)
 end
 
 # Dumme møgspell
-examples = 10
+examples = 100_000
 armor_class = 16
 attack_bonus = 4
 rolls = {}
 rounds_before_rest = 10
-attacks_pr_round = 2
-number_of_shield_spells = 2
+attacks_pr_round = 1
+number_of_shield_spells = 3
 number_of_damage_dice = 1
 damage_die = 10
 damage_die_bonus = 4
 last_round_skipped = false
-print = true
+print = false
 
 examples.times do |roll|
   puts "#{roll}" if roll.positive? && roll.modulo(10_000) == 0
@@ -78,8 +78,11 @@ puts ""
 puts "Antal hits mod Phase (og dermed skippede runder): #{phase_hits}"
 puts "Antal hits mod Shield: #{shield_hits}"
 puts ""
-puts "Antal andet hits mod Phase: #{second_phase_hit}"
-puts "Antal andet hits mod Shield: #{second_shield_hit}"
+puts "Antal andet hits ved brug af Phase: #{second_phase_hit}"
+puts "Antal andet hits ved brug af Shield: #{second_shield_hit}"
+puts ""
+puts "Antal samlet antal hits ved brug af Phase: #{phase_hits + second_phase_hit}"
+puts "Antal samlet antal hits ved brug af Phase: #{shield_hits + second_shield_hit}"
 puts ""
 puts "Gennemsnitligt Phase Damage output pr. dag: #{format(damage_dealt_phase/examples)}"
 puts "Gennemsnitligt Damage output pr dag: #{format(damage_dealt/examples)}"
