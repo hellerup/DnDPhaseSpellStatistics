@@ -23,15 +23,15 @@ examples.times do |d|
   puts day.to_s if day.positive? && day.modulo(10_000) == 0
   puts 'New example!' if print
   current_number_of_shield_spells = number_of_shield_spells
+  phase_hit = false
   combats_pr_day.times do |c|
     puts 'New combat!' if print
     combat = c + 1
-    phase_hit = false
     combat_rounds.times do |r|
       round = r + 1
       shield_active = false # Effective against all attacks in this round
       skip_damage = phase_hit
-      phase_hit = false
+      phase_hit = !(skip_damage && phase_hit)
       attacks_pr_round.times do |att|
         attack_no = att + 1
         id = "#{day}-#{combat}-#{round}-#{attack_no}".to_sym
@@ -47,17 +47,16 @@ examples.times do |d|
         # Only relevant on attack 1
         dis_adv_hits = disadv_roll + attack_bonus >= armor_class
         # If this is the first attack and if the dis_adv hit hits, next round will be skipped
-        phase_prevented_hit = attack_no == 1 && dis_adv_hits
+        phase_prevented_hit = attack_no == 1 && primary_hit && !dis_adv_hits
+        phase_hit = attack_no == 1 && primary_hit && dis_adv_hits unless phase_hit
 
         # We need to register all attacks where the Shield prevents the attack
-        shield_prevented_hit = shield_bonus.positive? && primary_hit && primary_roll + attack_bonus >= armor_class + shield_bonus
+        shield_prevented_hit = shield_bonus.positive? && primary_hit && primary_roll + attack_bonus <= armor_class + shield_bonus
         shield_active = true if primary_hit && shield_prevented_hit
 
-        if skip_damage
-          damage_dealt = 0
-        else
-          damage_dealt = rand(1..damage_die) + damage_die_bonus 
-        end
+        damage_dealt = rand(1..damage_die) + damage_die_bonus
+        phase_missed_damage = 0
+        phase_missed_damage = damage_dealt if skip_damage
 
         rolls[id] = {
           id: id,
@@ -67,9 +66,11 @@ examples.times do |d|
           phase_prevented_hit: phase_prevented_hit,
           shield_prevented_hit: shield_prevented_hit,
           damage_dealt: damage_dealt,
+          phase_hit: phase_hit,
+          phase_missed_damage: phase_missed_damage,
+          skip_damage: skip_damage,
           shield_bonus: shield_bonus,
-          s: current_number_of_shield_spells,
-          act: shield_active
+          shield_active: shield_active,
         }
 
         puts rolls[id] if print
@@ -84,9 +85,8 @@ end
 primary_hits = 0
 phase_prevented_hits = 0
 shield_prevented_hits = 0
-second_phase_hit = 0
-second_shield_hit = 0
 damage_dealt_phase = 0
+phase_missed_damage = 0
 damage_dealt = 0
 
 rolls.each do |_k, v|
@@ -95,6 +95,7 @@ rolls.each do |_k, v|
   shield_prevented_hits += 1 if v[:shield_prevented_hit]
   damage_dealt_phase += v[:damage_dealt]
   damage_dealt += v[:damage_dealt]
+  phase_missed_damage += v[:phase_missed_damage]
 end
 
 puts "Antal dage testet #{examples}"
@@ -113,13 +114,5 @@ puts "Antal hits som Phase afværgede #{phase_prevented_hits}"
 puts ''
 puts "Antal hits Shield afværgede: #{shield_prevented_hits}"
 puts ''
-puts "Gennemsnitligt Phase Damage output pr. dag: #{format(damage_dealt_phase / examples)}"
-puts "Gennemsnitligt Damage output pr dag: #{format(damage_dealt / examples)}"
-
-
-
-# Antal attacks i alt
-# Antal hits afværget med Phase
-# Antal hits mod Phase som så giver en misset runde
-
-# Antal hits
+puts "Gennemsnitligt Damage output pr. dag: #{format(damage_dealt_phase / examples)}"
+puts "Gennemsnitligt missed Damage output pr dag: #{format(phase_missed_damage / examples)}"
