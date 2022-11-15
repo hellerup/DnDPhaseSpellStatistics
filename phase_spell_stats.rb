@@ -21,9 +21,10 @@ print = true
 examples.times do |d|
   day = d + 1
   puts day.to_s if day.positive? && day.modulo(10_000) == 0
-  puts 'New combat!' if print
+  puts 'New example!' if print
   current_number_of_shield_spells = number_of_shield_spells
   combats_pr_day.times do |c|
+    puts 'New combat!' if print
     combat = c + 1
     phase_hit = false
     combat_rounds.times do |r|
@@ -37,34 +38,38 @@ examples.times do |d|
         primary_roll = rand(1..20)
         second_roll = rand(1..20)
         disadv_roll = [primary_roll, second_roll].min
-        shield_bonus = (current_number_of_shield_spells.positive? || shield_active ? 5 : 0)
+        shield_bonus = ((current_number_of_shield_spells.positive? || shield_active) ? 5 : 0)
 
         # Will the primary attack hit
-        primary_hits = primary_roll + attack_bonus >= armor_class
+        primary_hit = primary_roll + attack_bonus >= armor_class
 
         # Phase
         # Only relevant on attack 1
         dis_adv_hits = disadv_roll + attack_bonus >= armor_class
         # If this is the first attack and if the dis_adv hit hits, next round will be skipped
-        phase_hit = true if attack_no == 1 && dis_adv_hits
+        phase_prevented_hit = attack_no == 1 && dis_adv_hits
 
         # We need to register all attacks where the Shield prevents the attack
-        will_shield_prevent_hit = primary_hits && primary_roll + attack_bonus >= armor_class + shield_bonus
-        shield_active = true if primary_hits && will_shield_prevent_hit
+        shield_prevented_hit = shield_bonus.positive? && primary_hit && primary_roll + attack_bonus >= armor_class + shield_bonus
+        shield_active = true if primary_hit && shield_prevented_hit
 
         if skip_damage
           damage_dealt = 0
         else
           damage_dealt = rand(1..damage_die) + damage_die_bonus 
         end
-        
+
         rolls[id] = {
           id: id,
           roll: primary_roll,
-          second_roll: second_roll,
           disadv_roll: disadv_roll,
-          phase_hit: phase_hit,
+          primary_hit: primary_hit,
+          phase_prevented_hit: phase_prevented_hit,
+          shield_prevented_hit: shield_prevented_hit,
           damage_dealt: damage_dealt,
+          shield_bonus: shield_bonus,
+          s: current_number_of_shield_spells,
+          act: shield_active
         }
 
         puts rolls[id] if print
@@ -76,16 +81,18 @@ examples.times do |d|
   end
 end
 
-phase_hits = 0
-shield_hits = 0
+primary_hits = 0
+phase_prevented_hits = 0
+shield_prevented_hits = 0
 second_phase_hit = 0
 second_shield_hit = 0
 damage_dealt_phase = 0
 damage_dealt = 0
 
 rolls.each do |_k, v|
-  phase_hits += 1 if v[:phase_hit]
-  shield_hits += 1 if v[:shield_hit]
+  primary_hits += 1 if v[:primary_hit]
+  phase_prevented_hits += 1 if v[:phase_prevented_hit]
+  shield_prevented_hits += 1 if v[:shield_prevented_hit]
   damage_dealt_phase += v[:damage_dealt]
   damage_dealt += v[:damage_dealt]
 end
@@ -94,13 +101,25 @@ puts "Antal dage testet #{examples}"
 puts "Antal kampe pr. dag: #{combats_pr_day}"
 puts "Antal runder pr. kamp: #{combat_rounds}"
 puts "Antal indkommende attacks hver runde: #{attacks_pr_round}"
+puts "Antal attacks i alt: #{ examples * combats_pr_day * combat_rounds * attacks_pr_round }"
 puts "Attack bonus pr. indkommende attack: +#{attack_bonus}"
 puts "Mod AC: #{armor_class}"
 puts "Antal Shield spells pr. dag: #{number_of_shield_spells}"
 puts "Egen damage pr. runde #{number_of_damage_dice}d#{damage_die}+#{damage_die_bonus}"
 puts ''
-puts "Antal hits mod Phase (og dermed skippede runder): #{phase_hits}"
-puts "Antal hits mod Shield: #{shield_hits}"
+puts "Antal totale hits: #{primary_hits}"
+puts ''
+puts "Antal hits som Phase afværgede #{phase_prevented_hits}"
+puts ''
+puts "Antal hits Shield afværgede: #{shield_prevented_hits}"
 puts ''
 puts "Gennemsnitligt Phase Damage output pr. dag: #{format(damage_dealt_phase / examples)}"
 puts "Gennemsnitligt Damage output pr dag: #{format(damage_dealt / examples)}"
+
+
+
+# Antal attacks i alt
+# Antal hits afværget med Phase
+# Antal hits mod Phase som så giver en misset runde
+
+# Antal hits
