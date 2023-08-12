@@ -1,5 +1,5 @@
 # DnDPhaseSpellStatistics
-Ruby script for calcultating effectiveness of Phase vs. Shiled Spell
+Ruby script for calcultating effectiveness of Phase vs. Shield Spell
 
 I hate the spell "Phase" from Grimlores Grimoire. Basically because one of my players survived a certain death (or some'ng) from a Banshee bc. he cast this ridiculous spell.
 
